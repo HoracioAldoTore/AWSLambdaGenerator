@@ -4,11 +4,24 @@ using System.Text.Json.Serialization;
 namespace GeneradorAWS.Configuration
 {
     public static class ConfigManager
-    {
+    {        
         /// <summary>
-        /// Path al archivo de configuracion.
+        /// Path al directorio donde se encuntran los templates o views.
         /// </summary>
-        private static string PathToConfig
+        public static string PathToViews
+        {
+            get 
+            {                
+                string pathToViews = Path.Combine(ExePath, "Views");
+
+                return pathToViews;
+            }
+        }
+
+        /// <summary>
+        /// Path al .exe de la aplicacion.
+        /// </summary>
+        private static string ExePath
         {
             get
             {
@@ -16,9 +29,21 @@ namespace GeneradorAWS.Configuration
 
                 string strWorkPath = System.IO.Path.GetDirectoryName(strExeFilePath);
 
-                string pathToConfig = Path.Combine(strWorkPath, "ConfigDB.json");
+                return strWorkPath;
+            }
+        }
+
+
+        /// <summary>
+        /// Path al archivo de configuracion.
+        /// </summary>
+        private static string PathToConfig
+        {
+            get
+            {
+                string pathToConfig = Path.Combine(ExePath, "ConfigDB.json");
                 return pathToConfig;
-            }            
+            }           
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
+using GeneradorAWS.Configuration;
 using MySql.Data.MySqlClient;
 using RazorLight;
 using System;
@@ -8,16 +9,14 @@ using System.Threading.Tasks;
 namespace GeneradorAWS
 {
     public class Generador
-    {       
-        const string TEMPLATE_DIR = @"C:\Users\MiUsuario\Downloads\GeneradorAWS\GeneradorAWS\Views";
-
+    {               
         public static async Task<string> Generar(string viewFile, DatabaseTable table)
         {
             string result = "";
             //https://github.com/toddams/RazorLight/issues/287
 
             var engine = new RazorLightEngineBuilder()
-                .UseFileSystemProject(TEMPLATE_DIR)
+                .UseFileSystemProject(ConfigManager.PathToViews)
                 .UseMemoryCachingProvider()
                 .Build();
 
@@ -32,7 +31,7 @@ namespace GeneradorAWS
             //https://github.com/toddams/RazorLight/issues/287
 
             var engine = new RazorLightEngineBuilder()
-                .UseFileSystemProject(TEMPLATE_DIR)
+                .UseFileSystemProject(ConfigManager.PathToViews)
                 .UseMemoryCachingProvider()
                 .Build();
 
@@ -43,7 +42,7 @@ namespace GeneradorAWS
 
         public static async Task<string> Generar(string viewFile)
         {
-            string path = Path.Combine(TEMPLATE_DIR, viewFile);
+            string path = Path.Combine(ConfigManager.PathToViews, viewFile);
             string result = await File.ReadAllTextAsync(path);
             return result;
         }
