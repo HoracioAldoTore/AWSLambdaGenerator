@@ -1,0 +1,29 @@
+﻿@model DatabaseTable
+@using DatabaseSchemaReader.DataSchema
+@inherits RazorLight.TemplatePage<DatabaseTable>
+
+namespace CRUD
+{
+    public class @Model.Name
+    {     
+        @foreach (var column in Model.Columns)
+        {
+            @if(column.IsPrimaryKey)
+            {
+                @: //IsPrimaryKey
+            }
+            @if(column.IsAutoNumber)
+            {
+                @: //IsAutoNumber
+            }
+            @if(column.Nullable)
+            {
+                @: public @(column.NetDataType().Name)? @column.Name { get; set; }
+            }
+            else
+            {
+                @: public @(column.NetDataType().Name) @column.Name { get; set; }    
+            }        
+        }            
+    }
+}

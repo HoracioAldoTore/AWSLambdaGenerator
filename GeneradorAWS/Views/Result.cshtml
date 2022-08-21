@@ -1,0 +1,80 @@
+﻿@model DatabaseTable
+@using DatabaseSchemaReader.DataSchema
+@inherits RazorLight.TemplatePage<DatabaseTable>
+
+namespace CRUD
+{
+    internal class Result
+    {
+        public Result()
+        {
+            //Inicializa en forma existosa
+            IsSuccess = true;
+            _Message = "Ejecucion exitosa.";
+        }
+
+        /// <summary>
+        /// Resultado éxito.
+        /// </summary>
+        public bool IsSuccess { get; set; }
+
+        private string _Message;
+        public string Message
+        {
+            get { return _Message; }
+            set
+            {
+                _Message = value;
+                //Si seteamos el mensaje de error se supone un resultado no existoso.
+                this.IsSuccess = false;
+            }
+        }
+
+        private ErrorCodes _ErrorCodes;
+        public ErrorCodes ErrorCodes
+        {
+            set
+            {
+                this._ErrorCodes = value;
+
+                Dictionary<ErrorCodes, string> errors = new Dictionary<ErrorCodes, string>();
+                errors.Add(ErrorCodes.RecordNotFound, "El registro no existe");
+                errors.Add(ErrorCodes.RecordCannotBeAdded, "El registro no pudo ser adicionado");
+                errors.Add(ErrorCodes.CommadNotFound, "El comando o vervo HTTP no existe");
+
+                _Message = errors[value];
+
+                //Si seteamos el mensaje de error se supone un resultado no existoso.
+                this.IsSuccess = false;
+            }
+            get { return _ErrorCodes; }
+        }
+
+        public string ErrorCodesDescription
+        {
+            get 
+            {
+                string desc = (this.IsSuccess) ? "" : _ErrorCodes.ToString();
+                return desc;
+            }
+        }
+
+        /// <summary>
+        /// Datos adicionales.
+        /// </summary>
+        public @Model.Name Entity { get; set; }
+
+        public List<@Model.Name> Entities { get; set; }
+
+        /// <summary>
+        /// Datos adicionales.
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// POST, GET, PUT, DELETE
+        /// </summary>
+        public string Command { get; set; }
+
+    }
+}

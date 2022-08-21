@@ -1,0 +1,41 @@
+﻿@model List<DatabaseTable>
+@using DatabaseSchemaReader.DataSchema
+@inherits RazorLight.TemplatePage<List<DatabaseTable>>
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32519.379
+MinimumVisualStudioVersion = 10.0.40219.1
+
+@foreach (var table in Model)
+{
+@:Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lambda@(table.Name)", "Lambda@(table.Name)\Lambda@(table.Name).csproj", "{@Guid.NewGuid()}"
+@:EndProject
+}
+
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77DD8DC2-B1E7-4264-8200-ACCA91AE2DA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77DD8DC2-B1E7-4264-8200-ACCA91AE2DA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77DD8DC2-B1E7-4264-8200-ACCA91AE2DA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77DD8DC2-B1E7-4264-8200-ACCA91AE2DA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4C20B1A-3988-4BFE-A050-10F52E4E79F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4C20B1A-3988-4BFE-A050-10F52E4E79F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4C20B1A-3988-4BFE-A050-10F52E4E79F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4C20B1A-3988-4BFE-A050-10F52E4E79F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C9BFD7F-43BF-4DF9-9DDA-F9474430D12D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C9BFD7F-43BF-4DF9-9DDA-F9474430D12D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C9BFD7F-43BF-4DF9-9DDA-F9474430D12D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C9BFD7F-43BF-4DF9-9DDA-F9474430D12D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BDADEBC0-78D4-45A0-AAB1-990E9E887E18}
+	EndGlobalSection
+EndGlobal

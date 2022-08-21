@@ -1,0 +1,453 @@
+﻿@model DatabaseTable
+@using DatabaseSchemaReader.DataSchema
+@inherits RazorLight.TemplatePage<DatabaseTable>
+
+using Amazon.Lambda.APIGatewayEvents;
+using Amazon.Lambda.Core;
+using System.Net;
+using System.Text.Json;
+using MySql.Data.MySqlClient;
+using System.Data;
+using System.Text;
+
+// Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
+[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+
+namespace CRUD;
+
+public class Function
+{
+    /// <summary>
+    /// CRUD REST API para la tabla @(Model.Name)
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public APIGatewayProxyResponse CRUD@(Model.Name)(APIGatewayProxyRequest request, ILambdaContext context)
+    {               
+        int? @Model.PrimaryKeyVar() = GetRequestQueryStringId(request);    
+        @Model.PrimaryKeyVar() = (@(Model.PrimaryKeyVar()).HasValue) ? @(Model.PrimaryKeyVar()).Value : -1;
+
+        @Model.Name @Model.NameVar() = GetEntityFromRequestBody(request);
+        
+        bool isSuccess;
+        
+        Result result = new Result();
+        result.Entity = @Model.NameVar();
+        result.Entities = new List<@Model.Name>();
+        result.Id = @(Model.PrimaryKeyVar()).Value;
+        result.Command = request.HttpMethod;
+
+        APIGatewayProxyResponse response = new APIGatewayProxyResponse();
+
+        switch (request.HttpMethod.ToUpper())
+        {            
+            case "GET":
+                //Read
+                Select(request, result, @(Model.PrimaryKeyVar()).Value);
+                break;
+            case "POST":
+                //Create        
+                isSuccess = Insert(@Model.NameVar());
+                if (!isSuccess) result.ErrorCodes = ErrorCodes.RecordCannotBeAdded;
+                break;
+            case "PUT":
+                //Update
+                isSuccess = Update(@Model.NameVar());
+                if (!isSuccess) result.ErrorCodes = ErrorCodes.RecordNotFound;
+                break;
+            case "PATCH":
+                //Update partial
+                isSuccess = UpdatePartial(request.Body, @(Model.PrimaryKeyVar()).Value);
+                if (!isSuccess) result.ErrorCodes = ErrorCodes.RecordNotFound;
+                break;
+            case "DELETE":
+                //Delete                
+                isSuccess = Delete(@(Model.PrimaryKeyVar()).Value);
+                if (!isSuccess) result.ErrorCodes = ErrorCodes.RecordNotFound;
+                break;
+            default:
+                result.ErrorCodes = ErrorCodes.CommadNotFound;
+                break;
+        }
+
+        response = GetResponse(result);
+
+        return response;
+    }
+
+    private @Model.Name GetEntityFromRequestBody(APIGatewayProxyRequest request)
+    {
+        @(Model.Name)? @Model.NameVar() = null;
+        try
+        {
+            @Model.NameVar() = JsonSerializer.Deserialize<@Model.Name>(request.Body);
+        }
+        catch { }
+        
+        @Model.NameVar() = @Model.NameVar() ?? new @(Model.Name)();
+
+        return @Model.NameVar();
+    }
+
+    private void Select(APIGatewayProxyRequest request, Result result, int @Model.PrimaryKeyVar())
+    {
+        if (@Model.PrimaryKeyVar() > 0)
+        {
+            @(Model.Name)? @Model.NameVar() = SelectOne(@Model.PrimaryKeyVar());
+            if (@Model.NameVar() == null)
+                result.ErrorCodes = ErrorCodes.RecordNotFound;
+            else
+                result.Entity = @Model.NameVar();
+        }
+        else
+        {
+            string query = GetRequestQueryStringQuery(request);
+            List<@Model.Name> @Model.NamePlural() = SelectMany(query);
+            result.Entities = @Model.NamePlural();
+        }
+    }
+
+    /// <summary>
+    /// Lee el ConnectionString, desde una variable de entorno.
+    /// </summary>
+    /// <returns></returns>
+    private string GetConnectionString()
+    {
+        string? connectionString = Environment.GetEnvironmentVariable("connection_string");
+        connectionString = connectionString.Replace("{pwd}", "MiClave");
+        return connectionString;
+    }
+
+    private List<@Model.Name> SelectMany(string query)
+    {
+        List <@Model.Name> @Model.NamePlural() = new List<@Model.Name>();
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                command.Connection = connection;
+
+                command.CommandText = @@$"SELECT * 
+                                        FROM @Model.Name
+                                        WHERE {query};";
+
+                DataTable table = new DataTable();
+                MySqlDataAdapter dataAdapter = new MySqlDataAdapter(command);
+                dataAdapter.Fill(table);
+                @Model.NamePlural() = ConvertTableToList(table);               
+            }
+        }
+        return @Model.NamePlural();
+    }
+
+    private List<@Model.Name> ConvertTableToList(DataTable table)
+    {
+        List<@Model.Name> @Model.NamePlural() = new List<@Model.Name>();
+
+        foreach (DataRow row in table.Rows)
+        {
+            @Model.Name @Model.NameVar() = new @(Model.Name)();
+            @(Model.NameVar()).@Model.PrimaryKeyName() = Convert.ToInt32(row["@Model.PrimaryKeyName()"]);
+            @foreach (DatabaseColumn column in @Model.Columns)
+            {
+                @if(!column.IsPrimaryKey)
+                {                    
+                    @if(column.Nullable)
+                    {
+                        @: //Adminte nulos
+                        @: @(Model.NameVar()).@(column.Name) = (row["@(column.Name)"] == DBNull.Value) ? null : @(column.ConvertTo())(row["@(column.Name)"]);
+                    }
+                    else
+                    {
+                        @: //NO adminte nulos
+                        @: @(Model.NameVar()).@(column.Name) = @(column.ConvertTo())(row["@(column.Name)"]);
+                    }                    
+                }                
+            }
+
+            @(Model.NamePlural()).Add(@Model.NameVar());
+        }
+
+        return @Model.NamePlural();
+    }
+
+    private string GetRequestQueryStringQuery(APIGatewayProxyRequest request)
+    {
+        string query = "";
+        try
+        {
+            query = request.QueryStringParameters["query"];
+            query = this.DecodeBase64(query);
+        }
+        catch { };
+
+        return query;
+    }
+
+    private string DecodeBase64(string value)
+    {
+        var valueBytes = System.Convert.FromBase64String(value);
+        return Encoding.UTF8.GetString(valueBytes);
+    }
+
+    private int? GetRequestQueryStringId(APIGatewayProxyRequest request)
+    {
+        object idObject = -1;
+        try
+        {
+            //Quizás no exista el parámetro.
+            idObject = request.QueryStringParameters["id"];
+        }
+        catch { };
+
+        int? id = null;
+        try
+        {
+            id = Convert.ToInt32(idObject);
+        }
+        catch { };
+        return id;
+    }
+
+    private APIGatewayProxyResponse GetResponse(Result result)
+    {
+        //Es necesario agregar el “header” "Access-Control-Allow-Origin" para que
+        //no se genere un error cunado se invoca al servicio web.
+        Dictionary<string, string> headers = new Dictionary<string, string>();
+        headers.Add("Access-Control-Allow-Origin", "*");
+
+        APIGatewayProxyResponse response = new APIGatewayProxyResponse()
+        {
+            Headers = headers,
+            Body = JsonSerializer.Serialize(result),
+            StatusCode = (result.IsSuccess) ? (int)HttpStatusCode.OK : (int)HttpStatusCode.BadRequest
+        };
+
+        return response;
+    }
+
+    private bool Insert(@Model.Name @Model.NameVar())
+    {
+        bool isInsertSuccess = false;
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                @{var coma = "";}
+                command.CommandText = @@"INSERT INTO @(Model.Name)
+                (
+                @foreach (var column in @Model.Columns)
+                {                    
+                    @if(!column.IsPrimaryKey)
+                    {
+                        @: @coma @(column.Name)
+                        coma = ", ";
+                    }
+                }
+                )
+                VALUES
+                (
+                @{coma = "";}
+                @foreach (var column in @Model.Columns)
+                {
+                    @if(!column.IsPrimaryKey)
+                    {
+                        @: @coma @@@(column.Name)
+                        coma = ", ";
+                    }
+                }
+                )
+                ";               
+
+                @foreach (var column in @Model.Columns)
+                {
+                    @if(!column.IsPrimaryKey)
+                    {
+                        @if(column.Nullable)
+                        {
+                            @: command.Parameters.AddWithValue("@@@column.Name",  (@(Model.NameVar()).@column.Name == null) ? DBNull.Value : @(Model.NameVar()).@column.Name);
+                        }
+                        else
+                        {
+                            @: command.Parameters.AddWithValue("@@@column.Name",  @(Model.NameVar()).@column.Name);
+                        }                               
+                    }                    
+                }
+                
+                command.Connection = connection;
+                command.Connection.Open();
+                command.ExecuteNonQuery();
+
+                command.CommandText = "SELECT LAST_INSERT_ID();";
+                command.Parameters.Clear();
+                object idObj = command.ExecuteScalar();
+                @(Model.NameVar()).@Model.PrimaryKeyName() = Convert.ToInt32(idObj);
+
+                isInsertSuccess = true; //El registro se adiciono con éxito.
+            }          
+        }
+        return isInsertSuccess;
+    }
+
+    private bool Delete(int @Model.PrimaryKeyVar())
+    {
+        bool isDeleteSuccess = false;
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                command.CommandText = @@"DELETE 
+                                        FROM @Model.Name
+                                        WHERE @Model.PrimaryKeyName() = @@@(Model.PrimaryKeyName());";
+
+                command.Parameters.AddWithValue("@@@(Model.PrimaryKeyName())", @Model.PrimaryKeyVar());
+                command.Connection = connection;
+                command.Connection.Open();
+                int recordsAffected = command.ExecuteNonQuery();
+                if(recordsAffected == 1) isDeleteSuccess = true;
+            }
+        }
+        return isDeleteSuccess;
+    }
+
+    /// <summary>
+    /// Genera la parte de los Sets, del comando Update de SQL.
+    /// </summary>
+    /// <param name="body">
+    /// Contiene un JSON can pares KEY,VALUE que se seran transformados en 
+    /// el Set del comando SQL.
+    /// </param>
+    /// <returns></returns>
+    private string GetSqlSetsForUpdate(string body)
+    {
+        var fields = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
+        string sqlSets = "";
+        string coma = "";
+        foreach (var field in fields)
+        {
+            string comillas = "'";
+            if (field.Value.ValueKind == JsonValueKind.Number)
+                comillas = "";
+            else if (field.Value.ValueKind == JsonValueKind.Null)
+                comillas = "";
+            else if (field.Value.ValueKind == JsonValueKind.False)
+                comillas = "";
+            else if (field.Value.ValueKind == JsonValueKind.True)
+                comillas = "";
+
+            string value = (field.Value.ValueKind == JsonValueKind.Null) ? "null" : field.Value.ToString();
+
+            sqlSets += $" {coma}{field.Key} = {comillas}{value}{comillas} ";
+
+            coma = ", ";
+        }
+        return sqlSets;
+    }
+
+    /// <summary>
+    /// Modifica solo los campos del registro señalados por el HTTP PATCH.
+    /// </summary>
+    /// <param name="body">
+    /// Contiene un JSON can pares KEY,VALUE que se seran transformados en 
+    /// el Set del comando SQL.
+    /// </param>
+    /// <param name="@Model.PrimaryKeyVar()"></param>
+    /// <returns></returns>
+    private bool UpdatePartial(string body, int @Model.PrimaryKeyVar())
+    {        
+        string sqlSets = GetSqlSetsForUpdate(body);
+     
+        bool isUpdateSuccess = false;
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                command.CommandText = @@$"UPDATE Entorno
+                                        SET
+                                        {sqlSets}
+                                        WHERE @Model.PrimaryKeyName() = @@@Model.PrimaryKeyName();";
+
+                command.Parameters.AddWithValue("@@@Model.PrimaryKeyName()", @Model.PrimaryKeyVar());
+               
+                command.Connection = connection;
+                command.Connection.Open();
+                int recordsAffected = command.ExecuteNonQuery();
+                if (recordsAffected == 1) isUpdateSuccess = true;
+            }
+        }
+        return isUpdateSuccess;
+    }
+
+    private bool Update(@Model.Name @Model.NameVar())
+    {
+        bool isUpdateSuccess = false;
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                command.CommandText = @@"UPDATE @(Model.Name)
+                                        SET
+                @{coma = " ";}
+                @foreach (var column in @Model.Columns)
+                {
+                    @if(!column.IsPrimaryKey)
+                    {
+                                        @: @coma @(column.Name) = @@@(column.Name)                                                    
+                                        coma = ", ";                                                    
+                    }                                                
+                }                     
+                                        WHERE @Model.PrimaryKeyName() = @@@(Model.PrimaryKeyName());";
+
+                @foreach (var column in @Model.Columns)
+                {
+                    if(column.Nullable)
+                    {
+                        @: command.Parameters.AddWithValue("@@@column.Name",  (@(Model.NameVar()).@column.Name == null) ? DBNull.Value : @(Model.NameVar()).@column.Name);
+                    }
+                    else
+                    {
+                        @: command.Parameters.AddWithValue("@@@column.Name",  @(Model.NameVar()).@column.Name);
+                    }
+                }
+
+                command.Connection = connection;
+                command.Connection.Open();
+                int recordsAffected = command.ExecuteNonQuery();   
+                if(recordsAffected == 1) isUpdateSuccess = true;
+            }
+        }
+        return isUpdateSuccess;
+    }
+
+    private @(Model.Name)? SelectOne(int @Model.PrimaryKeyVar())
+    {
+        @(Model.Name)? @Model.NameVar() = null;
+        string connectionString = GetConnectionString();
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            using (MySqlCommand command = new MySqlCommand())
+            {
+                command.Connection = connection;
+         
+                command.CommandText = @@"SELECT * 
+                                        FROM @Model.Name
+                                        WHERE @Model.PrimaryKeyName() = @@@Model.PrimaryKeyName()";
+
+                command.Parameters.AddWithValue("@@@Model.PrimaryKeyName()", @Model.PrimaryKeyVar());
+
+                DataTable table = new DataTable();
+                MySqlDataAdapter dataAdapter = new MySqlDataAdapter(command);
+                dataAdapter.Fill(table);
+                List<@Model.Name> @Model.NamePlural() = ConvertTableToList(table);
+                @Model.NameVar() = @(Model.NamePlural()).FirstOrDefault();
+            }
+        }
+        return @Model.NameVar();
+    }
+}
