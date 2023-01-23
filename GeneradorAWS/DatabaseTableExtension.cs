@@ -1,4 +1,5 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using System.Runtime.CompilerServices;
 
 namespace DatabaseSchemaReader.DataSchema
 {
@@ -46,6 +47,19 @@ namespace DatabaseSchemaReader.DataSchema
         {
             string name = table.PrimaryKey.Columns[0];
             return name;
+        }
+
+        /// <summary>
+        /// Evalúa si la tabla posee todas sus columnas con tipos de datos 
+        /// convertibles a C# para poder generar código a partir de ella.
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
+        public static bool HasNetDataType(this DatabaseTable table)
+        {
+            bool isValid = !table.Columns.Any(col => col.NetDataType() == null);
+
+            return isValid;
         }
     }
 }

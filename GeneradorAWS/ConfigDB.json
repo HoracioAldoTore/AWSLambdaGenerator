@@ -1,5 +1,5 @@
 {
-  "ConnectionString": "server=database-horacio.cluster-cd1b3rbisqnk.us-east-1.rds.amazonaws.com; database = UsuariosDB; uid = MiUsuario; pwd = MiClave",
+  "ConnectionString": "server=; database = ; uid = ; pwd = ",
   "SolutionName": "AWSSolution",
-  "OutputPath": "C:\\Users\\MiUsuario\\Downloads\\GeneradorAWSSalida"
+  "OutputPath": "C:\\Users\\htore\\Downloads\\TARJNACION (shared folder)"
 }
