@@ -1,5 +1,5 @@
 {
-  "ConnectionString": "server=; database = ; uid = ; pwd = ",
+  "ConnectionString": "server= miServer; database = miDatabase; uid = miUid; pwd = miPwd",
   "SolutionName": "AWSSolution",
-  "OutputPath": "C:\\Users\\htore\\Downloads\\TARJNACION (shared folder)"
+  "OutputPath": "C:\\codigo_generado"
 }

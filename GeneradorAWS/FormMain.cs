@@ -70,7 +70,7 @@ namespace GeneradorAWS
 				FileManager.CraeteDirectory(@$"{configData.SolutionName}\Lambda{table.Name}\Properties\PublishProfiles");
 			}
 
-			codigo = await Generador.Generar("Solution.cshtml", schema.Tables);
+			codigo = await Generador.Generar("Solution.cshtml", validTables);
 			codigoFilePairs.Add(@$"{configData.SolutionName}\{configData.SolutionName}.sln", codigo);
 
 			FileManager.Clean();
