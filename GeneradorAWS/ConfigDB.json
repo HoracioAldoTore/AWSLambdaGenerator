@@ -1,5 +1,5 @@
 {
-  "ConnectionString": "server= miServer; database = miDatabase; uid = miUid; pwd = miPwd",
+  "ConnectionString": "MySQL ConnectionString source",
   "SolutionName": "AWSSolution",
-  "OutputPath": "C:\\codigo_generado"
+  "OutputPath": "C:\\Users\\htore\\Downloads\\TARJNACION (shared folder)"
 }

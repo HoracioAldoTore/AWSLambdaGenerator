@@ -129,9 +129,9 @@ public class Function
                 command.Connection = connection;
 
                 command.CommandText = @@$"SELECT * 
-                                        FROM @Model.Name
+                                        FROM `@Model.Name`
                                         WHERE {query};";
-
+                        
                 DataTable table = new DataTable();
                 MySqlDataAdapter dataAdapter = new MySqlDataAdapter(command);
                 dataAdapter.Fill(table);
@@ -237,13 +237,13 @@ public class Function
             using (MySqlCommand command = new MySqlCommand())
             {
                 @{var coma = "";}
-                command.CommandText = @@"INSERT INTO @(Model.Name)
+                command.CommandText = @@"INSERT INTO `@(Model.Name)`
                 (
                 @foreach (var column in @Model.Columns)
                 {                    
                     @if(!(column.IsPrimaryKey && column.IsAutoNumber))
                     {
-                        @: @coma @(column.Name)
+                        @: @coma `@(column.Name)`
                         coma = ", ";
                     }
                 }
@@ -308,9 +308,9 @@ public class Function
         {
             using (MySqlCommand command = new MySqlCommand())
             {
-                command.CommandText = @@"DELETE 
-                                        FROM @Model.Name
-                                        WHERE @Model.PrimaryKeyName() = @@@(Model.PrimaryKeyName());";
+                command.CommandText = @@"DELETE
+                                         FROM `@Model.Name`
+                                         WHERE `@Model.PrimaryKeyName()` = @@@(Model.PrimaryKeyName());";
 
                 command.Parameters.AddWithValue("@@@(Model.PrimaryKeyName())", @Model.PrimaryKeyVar());
                 command.Connection = connection;
@@ -349,7 +349,7 @@ public class Function
 
             string value = (field.Value.ValueKind == JsonValueKind.Null) ? "null" : field.Value.ToString();
 
-            sqlSets += $" {coma}{field.Key} = {comillas}{value}{comillas} ";
+            sqlSets += $" {coma}`{field.Key}` = {comillas}{value}{comillas} ";
 
             coma = ", ";
         }
@@ -375,10 +375,10 @@ public class Function
         {
             using (MySqlCommand command = new MySqlCommand())
             {
-                command.CommandText = @@$"UPDATE Entorno
+                command.CommandText = @@$"UPDATE `@(Model.Name)`
                                         SET
                                         {sqlSets}
-                                        WHERE @Model.PrimaryKeyName() = @@@Model.PrimaryKeyName();";
+                                        WHERE `@Model.PrimaryKeyName()` = @@@Model.PrimaryKeyName();";
 
                 command.Parameters.AddWithValue("@@@Model.PrimaryKeyName()", @Model.PrimaryKeyVar());
                
@@ -399,18 +399,18 @@ public class Function
         {
             using (MySqlCommand command = new MySqlCommand())
             {
-                command.CommandText = @@"UPDATE @(Model.Name)
-                                        SET
+                command.CommandText = @@"UPDATE `@(Model.Name)`
+                                         SET
                 @{coma = " ";}
                 @foreach (var column in @Model.Columns)
                 {
                     @if(!column.IsPrimaryKey)
                     {
-                                        @: @coma @(column.Name) = @@@(column.Name)                                                    
+                                        @: @coma `@(column.Name)` = @@@(column.Name)
                                         coma = ", ";                                                    
                     }                                                
                 }                     
-                                        WHERE @Model.PrimaryKeyName() = @@@(Model.PrimaryKeyName());";
+                                        WHERE `@Model.PrimaryKeyName()` = @@@(Model.PrimaryKeyName());";
 
                 @foreach (var column in @Model.Columns)
                 {
@@ -444,8 +444,8 @@ public class Function
                 command.Connection = connection;
          
                 command.CommandText = @@"SELECT * 
-                                        FROM @Model.Name
-                                        WHERE @Model.PrimaryKeyName() = @@@Model.PrimaryKeyName()";
+                                        FROM `@Model.Name`
+                                        WHERE `@Model.PrimaryKeyName()` = @@@Model.PrimaryKeyName()";
 
                 command.Parameters.AddWithValue("@@@Model.PrimaryKeyName()", @Model.PrimaryKeyVar());
 
