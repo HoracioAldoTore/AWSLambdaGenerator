@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="Models\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="ConfigDB.json" />
     <None Remove="Views\aws-lambda-tools-defaults.cshtml" />
     <None Remove="Views\Entity.cshtml" />
@@ -73,10 +79,6 @@
     <PackageReference Include="DatabaseSchemaReader" Version="2.7.12" />
     <PackageReference Include="MySql.Data" Version="8.0.30" />
     <PackageReference Include="RazorLight" Version="2.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>
 
   <ItemGroup>
